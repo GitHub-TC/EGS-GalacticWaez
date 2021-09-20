@@ -3,18 +3,18 @@ using Eleon.Modding;
 
 namespace GalacticWaez
 {
-    public class ChatMessage: MessageData
+    public static class ChatMessage
     {
-        public ChatMessage(string message, IPlayer player, 
-            MsgChannel channel = MsgChannel.Global)
-        {
-            SenderType = SenderType.System;
-            SenderNameOverride = "Waez";
-            Channel = channel;
-            RecipientEntityId = player.Id;
-            RecipientFaction = player.Faction;
-            Text = message;
-            IsTextLocaKey = false;
-        }
+        public static MessageData Create(string message, MessageData playerAsk)
+            => new MessageData()
+            {
+                SenderType = SenderType.System,
+                SenderNameOverride = "Waez",
+                Channel = MsgChannel.Global,
+                RecipientEntityId = playerAsk.SenderEntityId,
+                RecipientFaction = playerAsk.SenderFaction,
+                Text = message,
+                IsTextLocaKey = false,
+            };
     }
 }

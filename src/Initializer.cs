@@ -24,19 +24,28 @@ namespace GalacticWaez
 
         public void Initialize(DoneCallback doneCallback)
         {
-            this.doneCallback = doneCallback;
-            init = Task<string>.Factory.StartNew(BuildGalaxyMap);
-            modApi.Application.Update += OnUpdateDuringInit;
+            var msg = BuildGalaxyMap();
+            doneCallback(galaxy, msg);
+
+            //this.doneCallback = doneCallback;
+            //init = Task<string>.Factory.StartNew(BuildGalaxyMap);
+            //modApi.Application.Update += OnUpdateDuringInit;
         }
 
         private string BuildGalaxyMap()
         {
+            modApi.Log($"BuildGalaxyMap");
             var db = new SaveGameDB(modApi);
+            modApi.Log($"SaveGameDB");
             var knownStar = db.GetFirstKnownStarPosition();
+            modApi.Log($"GetFirstKnownStarPosition");
             var message = new StringBuilder();
             var stars = FindStarData(knownStar, message);
+            modApi.Log($"FindStarData");
             float range = db.GetLocalPlayerWarpRange();
+            modApi.Log($"GetLocalPlayerWarpRange");
             galaxy = CreateGalaxy(stars, range, message);
+            modApi.Log($"CreateGalaxy");
             return message.ToString();
         }
 

@@ -54,7 +54,8 @@ namespace GalacticWaez
 
         public float GetLocalPlayerWarpRange()
         {
-            return GetPlayerWarpRange(modApi.Application.LocalPlayer.Id);
+            return 30;
+            //return modApi.Application.LocalPlayer?.Id == 0 ? 30 : GetPlayerWarpRange(modApi.Application.LocalPlayer.Id);
         }
 
         public SectorCoordinates GetFirstKnownStarPosition()
@@ -124,7 +125,7 @@ namespace GalacticWaez
         }
 
         // returns the number of bookmarks added
-        public int InsertBookmarks(IEnumerable<SectorCoordinates> positions, IPlayer player)
+        public int InsertBookmarks(IEnumerable<SectorCoordinates> positions, int playerFactionId, int playerId)
         {
             SqliteConnection connection = null;
             SqliteCommand command = null;
@@ -145,7 +146,7 @@ namespace GalacticWaez
                 foreach (var p in positions)
                 {
                     sql.Append($"({bid},0,0,1,");
-                    sql.Append($"{player.Faction.Id},{player.Id},");
+                    sql.Append($"{playerFactionId},{playerId},");
                     sql.Append($"'Waez_{stepNo}',{p.x},{p.y},{p.z},0,0,0,2,0,1,1,0,0,");
                     sql.Append($"{ticks},0,0,0),");
                     stepNo++;

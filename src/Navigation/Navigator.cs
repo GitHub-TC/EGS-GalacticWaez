@@ -12,8 +12,11 @@ namespace GalacticWaez.Navigation
         public delegate void DoneCallback(string message);
 
         private Task<string> navigation = null;
+
+        public int playerFactionId { get; private set; }
+
+        private int playerId;
         private DoneCallback doneCallback;
-        private IPlayer player;
         private readonly IModApi modApi;
         private readonly Galaxy galaxy;
         private readonly SaveGameDB db;
@@ -25,10 +28,11 @@ namespace GalacticWaez.Navigation
             db = new SaveGameDB(modApi);
         }
 
-        public void HandlePathRequest(string request, IPlayer player, DoneCallback doneCallback)
+        public void HandlePathRequest(string request, int playerFactionId, int playerId, DoneCallback doneCallback)
         {
+            this.playerFactionId = playerFactionId;
+            this.playerId = playerId;
             this.doneCallback = doneCallback;
-            this.player = player;
             navigation = Task<string>.Factory.StartNew(Navigate, request);
             modApi.Application.Update += OnUpdateDuringNavigation;
         }
@@ -70,7 +74,7 @@ namespace GalacticWaez.Navigation
                 path = path.Take(path.Count() - 1);
             }
             var sectorsPath = path.Select(n => n.ToSectorCoordinates());
-            int added = db.InsertBookmarks(sectorsPath, player);
+            int added = db.InsertBookmarks(sectorsPath, playerFactionId, playerId);
             return $"Path found; {added}/{path.Count()} waypoints added.";
         }
 
@@ -78,7 +82,12 @@ namespace GalacticWaez.Navigation
             => AstarPathfinder.FindPath(galaxy.GetNode(start), galaxy.GetNode(goal), range);
 
         private LYCoordinates StartCoords()
-            => new LYCoordinates(modApi.ClientPlayfield.SolarSystemCoordinates);
+        {
+            return new LYCoordinates(modApi.ClientPlayfield.SolarSystemCoordinates);
+
+            var currentPlayfield = modApi.Application.GetPlayerDataFor(playerId).Value.PlayfieldName;
+            //return new LYCoordinates(modApi.Application.GetAllPlayfields().First(P => P.PlayfieldName == currentPlayfield)., );
+        }
 
         private bool GoalCoordinates(string goalName, out LYCoordinates goalCoords, out bool isBookmark)
         {

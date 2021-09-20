@@ -55,12 +55,10 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="ModApi">
-      <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Empyrion - Galactic Survival\DedicatedServer\EmpyrionDedicated_Data\Managed\ModApi.dll</HintPath>
-      <Private>False</Private>
+      <HintPath>C:\steamcmd\empyrion.server\DedicatedServer\EmpyrionDedicated_Data\Managed\ModApi.dll</HintPath>
     </Reference>
     <Reference Include="Mono.Data.Sqlite">
-      <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Empyrion - Galactic Survival\DedicatedServer\EmpyrionDedicated_Data\Managed\Mono.Data.Sqlite.dll</HintPath>
-      <Private>False</Private>
+      <HintPath>C:\steamcmd\empyrion.server\DedicatedServer\EmpyrionDedicated_Data\Managed\Mono.Data.Sqlite.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />

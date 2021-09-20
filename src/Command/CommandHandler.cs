@@ -1,6 +1,8 @@
 ﻿using Eleon;
 using Eleon.Modding;
 using GalacticWaez.Navigation;
+using static System.Net.Mime.MediaTypeNames;
+using System.Runtime.Remoting.Channels;
 
 namespace GalacticWaez.Command
 {
@@ -36,45 +38,53 @@ namespace GalacticWaez.Command
                 string commandText = messageData.Text.Remove(0, CommandToken.Introducer.Length).Trim();
                 if (commandText.Equals(CommandToken.Init))
                 {
-                    Initialize();
+                    Initialize(messageData);
                     return;
                 }
                 if (commandText.Equals(CommandToken.GetStatus))
                 {
-                    HandleStatusRequest();
+                    HandleStatusRequest(messageData);
                     return;
                 }
                 if (commandText.Equals(CommandToken.Help))
                 {
-                    HandleHelpRequest();
+                    HandleHelpRequest(messageData);
                     return;
                 }
                 if (commandText.Equals(CommandToken.Clear))
                 {
-                    HandleClearRequest();
+                    HandleClearRequest(messageData);
                     return;
                 }
                 if (commandText.Equals(CommandToken.Restart))
                 {
-                    HandleRestartRequest();
+                    HandleRestartRequest(messageData);
                     return;
                 }
                 string[] tokens = commandText.Split(separator: new[] { ' ' }, count: 2);
                 if (tokens.Length == 2 && tokens[0].Equals(CommandToken.To))
                 {
-                    HandleNavRequest(tokens[1]);
+                    HandleNavRequest(messageData, tokens[1]);
                     return;
                 }
-                modApi.Application.SendChatMessage(new ChatMessage("Invalid Command", 
-                    modApi.Application.LocalPlayer));
+                modApi.Application.SendChatMessage(
+                    new MessageData()
+                    {
+                        SenderType          = SenderType.System,
+                        SenderNameOverride  = "Waez",
+                        Channel             = MsgChannel.Global,
+                        RecipientEntityId   = messageData.SenderEntityId,
+                        RecipientFaction    = messageData.SenderFaction,
+                        Text                = "Invalid Command",
+                        IsTextLocaKey       = false,
+                    });
             }
         }
 
-        private void HandleStatusRequest()
+        private void HandleStatusRequest(MessageData messageData)
         {
             string message = status.ToString();
-            modApi.Application.SendChatMessage(new ChatMessage(message, 
-                modApi.Application.LocalPlayer));
+            modApi.Application.SendChatMessage(ChatMessage.Create(message, messageData));
         }
 
         private const string HelpText = "Waez commands:\n"
@@ -84,43 +94,39 @@ namespace GalacticWaez.Command
             + "clear: remove all map markers that start with Waez_\n"
             + "help: get this help message\n";
 
-        private void HandleHelpRequest() => modApi.Application
-            .SendChatMessage(new ChatMessage(HelpText, modApi.Application.LocalPlayer));
+        private void HandleHelpRequest(MessageData messageData) => modApi.Application
+            .SendChatMessage(ChatMessage.Create(HelpText, messageData));
 
-        private void HandleClearRequest()
+        private void HandleClearRequest(MessageData messageData)
         {
             string message = $"Removed "
-                + saveGameDB.ClearPathMarkers(modApi.Application.LocalPlayer.Id)
+                + saveGameDB.ClearPathMarkers(messageData.SenderEntityId)
                 + " map markers.";
-            modApi.Application.SendChatMessage(new ChatMessage(message, 
-                modApi.Application.LocalPlayer));
+            modApi.Application.SendChatMessage(ChatMessage.Create(message, messageData));
         }
 
-        public void Initialize()
+        public void Initialize(MessageData messageData)
         {
             if (status != State.Uninitialized)
             {
                 string message = "Cannot init because Waez is " + status.ToString();
-                modApi.Application.SendChatMessage(new ChatMessage(message, 
-                    modApi.Application.LocalPlayer));
+                modApi.Application.SendChatMessage(ChatMessage.Create(message, messageData));
                 return;
             }
-            DoInit();
+            DoInit(messageData);
         }
 
-        private void HandleRestartRequest()
+        private void HandleRestartRequest(MessageData messageData)
         {
             if (status != State.Ready)
             {
-                string message = "Cannot restart because Waez is " + status.ToString();
-                modApi.Application.SendChatMessage(new ChatMessage(message, 
-                    modApi.Application.LocalPlayer));
+                if(messageData != null) modApi.Application.SendChatMessage(ChatMessage.Create($"Cannot restart because Waez is {status}", messageData));
                 return;
             }
-            DoInit();
+            DoInit(messageData);
         }
 
-        private void DoInit()
+        private void DoInit(MessageData messageData)
         {
             status = State.Initializing;
             new Initializer(modApi).Initialize((galaxy, response) =>
@@ -128,27 +134,25 @@ namespace GalacticWaez.Command
                 this.galaxy = galaxy;
                 status = State.Ready;
                 modApi.Log(response);
-                modApi.GUI.ShowGameMessage("Waez is ready.");
+                if(messageData != null) modApi.Application.SendChatMessage(ChatMessage.Create("Waez is ready.", messageData));
             });
         }
 
-        private void HandleNavRequest(string bookmarkName)
+        private void HandleNavRequest(MessageData messageData, string bookmarkName)
         {
             if (status != State.Ready)
             {
                 string message = "Unable: Waez is " + status.ToString();
-                modApi.Application.SendChatMessage(new ChatMessage(message, 
-                    modApi.Application.LocalPlayer));
+                modApi.Application.SendChatMessage(ChatMessage.Create(message, messageData));
                 return;
             }
             status = State.Busy;
             new Navigator(modApi, galaxy)
-                .HandlePathRequest(bookmarkName, modApi.Application.LocalPlayer,
+                .HandlePathRequest(bookmarkName, messageData.SenderFaction.Id, messageData.SenderEntityId,
                 response =>
                 {
                     status = State.Ready;
-                    modApi.Application.SendChatMessage(
-                        new ChatMessage(response, modApi.Application.LocalPlayer));
+                    modApi.Application.SendChatMessage(ChatMessage.Create(response, messageData));
                 });
         }
     }
